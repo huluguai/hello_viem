@@ -29,6 +29,6 @@
     "dotenv": "^16.5.0",
     "shamirs-secret-sharing": "^2.0.0",
     "typescript": "^5.7.2",
-    "viem": "^2.30.6"
+    "viem": "^2.44.4"
   }
 }
