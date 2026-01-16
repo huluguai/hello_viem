@@ -11,9 +11,9 @@
   "dependencies": {
     "@tanstack/react-query": "^5.74.11",
     "next": "15.3.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "viem": "^2.28.1"
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "viem": "^2.44.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

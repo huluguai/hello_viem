@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   createPublicClient, 
   createWalletClient, 
@@ -16,6 +16,25 @@ import TokenBankABI from '../contracts/TokenBank.json';
 
 // ERC20 标准 ABI
 const ERC20_ABI = [
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_owner",
+        "type": "address"
+      }
+    ],
+    "name": "balanceOf",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
   {
     "constant": false,
     "inputs": [
@@ -120,7 +139,7 @@ export default function TokenBankPage() {
       const [tokenBal, depositBal, allowanceAmount] = await Promise.all([
         publicClient.readContract({
           address: ERC20_TOKEN_ADDRESS,
-          abi: TokenBankABI,
+          abi: ERC20_ABI,
           functionName: 'balanceOf',
           args: [address],
         }),
@@ -151,7 +170,19 @@ export default function TokenBankPage() {
     if (address) {
       fetchBalances();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address]);
+
+  // 检查存款按钮是否应该禁用（授权额度不足）
+  const isDepositDisabled = useMemo(() => {
+    if (isLoading || !amount) return true;
+    try {
+      const amountWei = parseEther(amount);
+      return amountWei > allowance;
+    } catch {
+      return true;
+    }
+  }, [isLoading, amount, allowance]);
 
   // 处理授权
   const handleApprove = async () => {
@@ -252,7 +283,7 @@ export default function TokenBankPage() {
           <h2 className="text-xl font-semibold mb-4">账户信息</h2>
           <p className="mb-2">ERC20 代币余额: {formatEther(tokenBalance)} S6Token</p>
           <p className="mb-2">TokenBank 存款: {formatEther(depositBalance)} S6Token</p>
-          <p className="mb-4">当前授权额度: {formatEther(allowance)} ETH</p>
+          <p className="mb-4">当前授权额度: {formatEther(allowance)} S6Token</p>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-md">
@@ -275,7 +306,7 @@ export default function TokenBankPage() {
               </button>
               <button
                 onClick={handleDeposit}
-                disabled={isLoading || !amount || parseEther(amount) > allowance}
+                disabled={isDepositDisabled}
                 className="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
               >
                 {isLoading ? '存款中...' : '存款'}

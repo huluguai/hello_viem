@@ -6,6 +6,7 @@ import {
   createPublicClient, 
   http, 
   parseEther,
+  isAddress,
   type Hash,
   type Address,
   custom,
@@ -71,8 +72,23 @@ export default function EIP712Demo() {
       return;
     }
 
+    // 验证地址格式
+    if (!isAddress(toAddress)) {
+      setError('请输入有效的以太坊地址');
+      return;
+    }
+
+    // 验证金额
+    try {
+      parseEther(amount);
+    } catch (error) {
+      setError('请输入有效的金额');
+      return;
+    }
+
     try {
       setError('');
+      setVerificationResult(null); // 重置验证结果
       const domain = {
         name: 'EIP712Verifier',
         version: '1.0.0',
@@ -80,7 +96,7 @@ export default function EIP712Demo() {
         verifyingContract: CONTRACT_ADDRESS,
       };
 
-    // 合约中的 SEND_TYPEHASH 与前端定义的 types 结构一致
+      // 合约中的 SEND_TYPEHASH 与前端定义的 types 结构一致
       const types = {
         Send: [  //  primaryType, 签名时, 消息的标题会显示 primaryType 的名称
           { name: 'to', type: 'address' },
@@ -115,6 +131,26 @@ export default function EIP712Demo() {
       return;
     }
 
+    if (!toAddress || !amount) {
+      setError('请填写接收地址和金额');
+      return;
+    }
+
+    // 验证地址格式
+    if (!isAddress(toAddress)) {
+      setError('请输入有效的以太坊地址');
+      return;
+    }
+
+    // 验证金额
+    let amountWei;
+    try {
+      amountWei = parseEther(amount);
+    } catch (error) {
+      setError('请输入有效的金额');
+      return;
+    }
+
     try {
       setError('');
       const result = await publicClient.readContract({
@@ -125,7 +161,7 @@ export default function EIP712Demo() {
           account,
           {
             to: toAddress as Address,
-            value: parseEther(amount),
+            value: amountWei,
           },
           signature as Hash,
         ],
@@ -156,7 +192,11 @@ export default function EIP712Demo() {
             <input
               type="text"
               value={toAddress}
-              onChange={(e) => setToAddress(e.target.value)}
+              onChange={(e) => {
+                setToAddress(e.target.value);
+                setVerificationResult(null); // 重置验证结果
+                setSignature(''); // 重置签名
+              }}
               className="w-full p-2 border rounded"
               placeholder="0x..."
             />
@@ -167,24 +207,31 @@ export default function EIP712Demo() {
             <input
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                setVerificationResult(null); // 重置验证结果
+                setSignature(''); // 重置签名
+              }}
               className="w-full p-2 border rounded"
               placeholder="0.1"
+              step="any"
+              min="0"
             />
           </div>
 
           <div className="space-x-4">
             <button
               onClick={handleSign}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              disabled={!toAddress || !amount}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               签名
             </button>
             
             <button
               onClick={handleVerify}
-              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-              disabled={!signature}
+              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              disabled={!signature || !toAddress || !amount}
             >
               验证
             </button>
